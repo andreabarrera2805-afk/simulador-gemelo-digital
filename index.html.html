@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Simulador de gemelo digital</title>
+<style>
+:root{--tp:#1a1a18;--ts:#5f5e5a;--tt:#888780;--bg:#fff;--bg2:#f1efe8;--bd:rgba(0,0,0,.15);--bds:rgba(0,0,0,.3);color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--tp:#ecebe6;--ts:#b4b2a9;--tt:#888780;--bg:#1f1f1d;--bg2:#2b2b28;--bd:rgba(255,255,255,.15);--bds:rgba(255,255,255,.3);color-scheme:dark}}
+:root[data-theme="dark"]{--tp:#ecebe6;--ts:#b4b2a9;--tt:#888780;--bg:#1f1f1d;--bg2:#2b2b28;--bd:rgba(255,255,255,.15);--bds:rgba(255,255,255,.3);color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tp);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;font-size:14px}
+.w{max-width:860px;margin:0 auto;padding:1rem}
+.bar{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:1rem}
+button{cursor:pointer;border:.5px solid var(--bds);border-radius:8px;padding:8px 14px;font-size:14px;font-weight:500;background:transparent;color:var(--tp)}
+button:disabled{opacity:.4;cursor:not-allowed}
+.pill{border-radius:999px;padding:6px 14px}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:1rem}
+@media(max-width:640px){.cols{grid-template-columns:1fr}}
+h3{margin:0 0 8px;font-size:15px}
+.card{background:var(--bg);border:.5px solid var(--bd);border-radius:12px;padding:12px 14px;margin-bottom:10px}
+.ct{font-size:14px;font-weight:500;margin-bottom:8px}
+.m{display:flex;justify-content:space-between;padding:3px 0;color:var(--ts)}.m b{color:var(--tp);font-size:16px;font-weight:500}.m b.al{color:#E24B4A}
+.badge{margin-top:8px;padding:6px 10px;border-radius:8px;font-size:13px;font-weight:500}
+.lv{display:flex;gap:8px;align-items:center;padding:4px 8px;border-radius:8px;font-size:13px;color:var(--tt);border:.5px solid transparent}
+.lv.on{background:rgba(83,74,183,.15);color:var(--tp);border-color:#534AB7;font-weight:500}
+.sm{font-size:12px;color:var(--ts);line-height:1.5;margin-top:6px}
+.leg{display:flex;gap:14px;font-size:12px;color:var(--ts);margin-bottom:6px;flex-wrap:wrap}
+.leg i{display:inline-block;width:14px;height:3px;vertical-align:middle;margin-right:5px}
+.sub{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:640px){.sub{grid-template-columns:1fr}}
+svg{display:block;width:100%}
+#log{max-height:260px;overflow-y:auto}
+.lr{display:flex;gap:8px;padding:5px 0;border-top:.5px solid var(--bd);align-items:flex-start;font-size:13px;line-height:1.5}
+.ch{font-size:11px;font-weight:500;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.tm{font-size:11px;color:var(--tt);white-space:nowrap;min-width:34px;padding-top:2px}
+.ban{border:1.5px solid #E24B4A;background:rgba(226,75,74,.12);border-radius:12px;padding:8px 14px;margin-bottom:10px;font-size:13px;color:#E24B4A;font-weight:500;display:none}
+</style></head><body><div class="w">
+<div class="bar">
+ <div style="display:flex;gap:10px;align-items:center"><span style="color:var(--ts)">Capa de IA (columna CON IA)</span>
+ <button id="ai" class="pill" aria-pressed="false"></button></div>
+ <div style="display:flex;gap:8px"><button id="pz"></button><button id="rs">↺ Reiniciar</button></div>
+</div>
+<div class="cols" id="cols"></div>
+<div class="card"><div class="ct">🌡 Temperatura en el tiempo (misma secuencia de perturbaciones en ambos escenarios)</div>
+<div class="leg"><span><i style="background:#D85A30"></i>SIN IA</span><span><i style="background:#1D9E75"></i>CON IA</span><span style="color:#EF9F27">- - aviso 80 °C</span><span style="color:#E24B4A">- - fallo 92 °C</span><span style="color:#A32D2D">· · parada 95 °C</span></div>
+<svg id="gT" viewBox="0 0 620 170" role="img"><desc>Temperatura de ambos escenarios con umbrales.</desc></svg></div>
+<div class="sub">
+<div class="card"><div class="ct">⟳ RPM</div><svg id="gR" viewBox="0 0 300 90" role="img"><desc>RPM de ambos escenarios.</desc></svg></div>
+<div class="card"><div class="ct">〰 Vibración (mm/s)</div><svg id="gV" viewBox="0 0 300 90" role="img"><desc>Vibración de ambos escenarios.</desc></svg></div></div>
+<div class="card"><div class="ct">📋 Registro de eventos (cronológico; solo cambios y actuaciones)</div><div id="log"></div></div>
+<p class="sm">La demanda de carga, el desgaste y la perturbación ambiental son idénticos en ambos escenarios (secuencia determinista y reproducible). La diferencia nace solo de que el gemelo CON IA predice la tendencia y limita las RPM. La actuación reduce el riesgo, pero no garantiza que la máquina nunca falle: tiene un límite operativo mínimo de 1.500 rpm.</p>
+</div>
+<script>
+/*CORE*/
+const RPM_MIN=800,RPM_MAX=3600,HIST=150,T_WARN=80,T_FAIL=92,T_STOP=95,V_WARN=5.5,V_FAIL=8.5,MINCAP=1500,DT=0.4;
+function rng(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const NZ=(()=>{const r=rng(42),o=[];for(let i=0;i<2000;i++)o.push([r()-.5,r()-.5]);return o})();
+const cl=(v,a,b)=>Math.max(a,Math.min(b,v)),lerp=(a,b,u)=>a+(b-a)*cl(u,0,1),r0=Math.round;
+function demand(t){let d;if(t<20)d=1400;else if(t<50)d=lerp(1400,2700,(t-20)/30);else if(t<90)d=2700;else if(t<110)d=lerp(2700,1700,(t-90)/20);else if(t<130)d=1700;else if(t<160)d=lerp(1700,3200,(t-130)/30);else d=3200;return cl(d+110*Math.sin(t/9),RPM_MIN,RPM_MAX)}
+function wear(t){const u=cl((t-25)/130,0,1);return .9*u*u*(3-2*u)}
+function amb(t){return t>=85&&t<105?6:0}
+function mkM(tag){return{tag,rpm:1400,temp:62,vib:2,cap:null,stopped:false,mo:0,state:'OK',mode:'NORMAL',calm:0,lastStep:-99,pend:null,lim:false,slope:0,proj:62,th:[62]}}
+function L(s,m,k,text){s.seq=(s.seq||0)+1;s.log.push({t:s.t,tag:m.tag,k,text});if(s.log.length>150)s.log.shift()}
+function createSim(aiOn){const s={t:0,aiOn:!!aiOn,A:mkM('A'),B:mkM('B'),log:[],h:{tA:[62],tB:[62],rA:[1400],rB:[1400],vA:[2],vB:[2]}};
+ L(s,s.A,'DESC','Estado descriptivo: funcionamiento normal (1.400 rpm, 62 °C).');L(s,s.B,'DESC','Estado descriptivo: funcionamiento normal (1.400 rpm, 62 °C).');return s}
+function physics(s,m){const t=s.t,[n1,n2]=NZ[t%NZ.length],deg=Math.max(0,wear(t)-m.mo);
+ if(m.stopped){m.rpm=Math.max(0,m.rpm-250);m.temp+=(40-m.temp)*.04;m.vib+=(.3-m.vib)*.4}
+ else{const tg=cl(demand(t),RPM_MIN,m.cap==null?RPM_MAX:m.cap);m.rpm+=cl(tg-m.rpm,-70,70);
+  const x=cl((m.rpm-RPM_MIN)/(RPM_MAX-RPM_MIN),0,1);
+  const Teq=56+amb(t)+46*Math.pow(x,1.2)*(1+.3*deg);m.temp+=(Teq-m.temp)*.06+n1*.4;
+  const Vt=1.5+7*x*x*(1+.8*deg)+.05*Math.max(0,m.temp-80);m.vib+=(Vt-m.vib)*.35+n2*.25}
+ m.temp=cl(m.temp,20,110);m.vib=cl(m.vib,.2,12);
+ if(!m.stopped&&m.temp>=T_STOP){m.stopped=true;m.cap=null;m.mode='NORMAL';m.pend=null;m.stop={t:s.t,temp:m.temp,rpm:m.rpm};
+  L(s,m,'STOP',`Parada crítica por sobretemperatura: pico de ${r0(m.temp)} °C (≥ ${T_STOP} °C) a ${r0(m.rpm)} rpm. La parada persiste aunque la máquina se enfríe: exige mantenimiento con temperatura ≤ 70 °C.`)}}
+function status(s,m){if(m.stopped){m.state='STOP';return}
+ const f=m.temp>=T_FAIL||m.vib>=V_FAIL,w=m.temp>=T_WARN||m.vib>=V_WARN,o=m.state;
+ const n=f?'FAIL':(o==='FAIL'&&(m.temp>=90||m.vib>=8))?'FAIL':w?'WARN':(o!=='OK'&&o!=='STOP'&&(m.temp>=78||m.vib>=5.2))?'WARN':'OK';
+ if(n!==o){m.state=n;const v=`${r0(m.temp)} °C, ${m.vib.toFixed(1)} mm/s`;
+  if(n==='WARN'&&o==='OK')L(s,m,'ANOM',`Umbral de aviso superado (${v}).`);
+  else if(n==='FAIL')L(s,m,'ANOM',`Umbral de fallo superado (${v}).`);
+  else if(n==='OK')L(s,m,'DESC',`Variables de vuelta a rango normal (${v}).`)}}
+function release(s,m,msg){m.cap=null;m.mode='NORMAL';m.lim=false;L(s,m,'DESC',msg)}
+function control(s,m){const t=s.t,h=m.th,n=h.length,sl=n>1?(m.temp-h[Math.max(0,n-7)])/Math.min(6,n-1):0;
+ m.slope=sl;m.proj=m.temp+sl*12;
+ const risk=m.proj>=85||(m.temp>=78&&sl>.1);
+ if(m.mode==='NORMAL'){if(risk){m.mode='RISK';m.calm=0;m.lim=false;
+  const eta=sl>.02?r0((T_FAIL-m.temp)/sl*DT):null,ps=sl/DT;
+  L(s,m,'PRED',`Riesgo de sobretemperatura: ${r0(m.temp)} °C, tendencia ${ps>=0?'+':''}${ps.toFixed(2)} °C/s, proyección a ${r0(12*DT)} s: ${r0(m.proj)} °C`+(eta>0?`; fallo (92 °C) en ~${eta} s sin intervención.`:'.'));
+  L(s,m,'REC',`Recomendación: reducir RPM por debajo de ${r0(Math.max(MINCAP,m.rpm-300))} rpm y vigilar la vibración.`)}return}
+ m.calm=(m.temp<78&&m.proj<80)?m.calm+1:0;
+  const need=(m.temp>=80||m.proj>=82)&&sl>-.03,ready=t-m.lastStep>=8&&(m.cap==null||Math.abs(m.rpm-m.cap)<=60);
+ if(need&&ready){const base=m.cap==null?m.rpm:m.cap,nc=Math.max(MINCAP,Math.round((base-150)/50)*50);
+  if(m.cap==null||nc<m.cap){const cause=m.temp>=80?'temperatura ≥ 80 °C':'proyección ≥ 82 °C';
+   L(s,m,'ACT',`Actuación aplicada: límite de RPM ${m.cap==null?'sin límite':m.cap} → ${nc} rpm (RPM actuales: ${r0(m.rpm)}). Causa: ${cause} (${r0(m.temp)} °C, ${m.vib.toFixed(1)} mm/s).`);
+   m.cap=nc;m.lastStep=t;if(!m.pend)m.pend={due:t+15,rpm:r0(m.rpm),vib:m.vib,temp:r0(m.temp)}}
+  else if(!m.lim){m.lim=true;L(s,m,'ANOM',`Límite operativo alcanzado (${MINCAP} rpm): no se puede reducir más; la temperatura sigue en riesgo.`)}return}
+ if(m.cap!=null&&m.calm>=12&&t-m.lastStep>=8&&m.temp<76&&sl<.05){const o=m.cap;m.cap+=100;m.lastStep=t;m.lim=false;
+  L(s,m,'ACT',`Recuperación gradual: límite ${o} → ${m.cap} rpm (temperatura estable en ${r0(m.temp)} °C).`);
+  if(m.cap>=demand(t)+100)release(s,m,'Condiciones de recuperación cumplidas: se retira el límite y se restablece el régimen normal.')}
+ else if(m.cap==null&&m.calm>=12)m.mode='NORMAL'}
+function tick(s){s.t++;
+ for(const m of [s.A,s.B]){physics(s,m);m.th.push(m.temp);if(m.th.length>8)m.th.shift();status(s,m);
+  if(m===s.B&&s.aiOn&&!m.stopped)control(s,m);
+  if(m.pend&&s.t>=m.pend.due&&!m.stopped){const p=m.pend;m.pend=null;
+   L(s,m,'RES',`Resultado tras la actuación: RPM ${p.rpm} → ${r0(m.rpm)}, vibración ${p.vib.toFixed(1)} → ${m.vib.toFixed(1)} mm/s, temperatura ${p.temp} → ${r0(m.temp)} °C (${m.temp<p.temp?'descenso':'aún en ascenso o estable'}).`)}}
+ const h=s.h,P=(k,v)=>{h[k].push(v);if(h[k].length>HIST)h[k].shift()};
+ P('tA',s.A.temp);P('tB',s.B.temp);P('rA',s.A.rpm);P('rB',s.B.rpm);P('vA',s.A.vib);P('vB',s.B.vib)}
+function maintain(s,m){if(!m.stopped||m.temp>70)return false;
+ const st=m.stop;m.stop=null;m.stopped=false;m.mo+=.4;m.rpm=RPM_MIN;m.cap=null;m.mode='NORMAL';m.state='OK';m.th=[m.temp];m.lim=false;
+ L(s,m,'RECUP',`Mantenimiento completado a ${r0(m.temp)} °C (causa de la parada: ${st?r0(st.temp)+' °C':'sobretemperatura'}): desgaste reducido y reinicio controlado a 800 rpm. No es una actuación automática.`);return true}
+function setAi(s,on){if(s.aiOn===on)return;s.aiOn=on;const m=s.B;
+ if(!on){L(s,m,'DESC','IA desactivada: no habrá más predicciones, recomendaciones ni actuaciones.'+(m.cap!=null?` Se conserva el límite ya aplicado (${m.cap} rpm), sin gestión automática.`:''));return}
+ m.calm=0;m.lim=false;m.mode=m.cap!=null?'RISK':'NORMAL';
+ L(s,m,'DESC',`IA reactivada: analiza el estado actual (${r0(m.temp)} °C, ${r0(m.rpm)} rpm${m.cap!=null?`, límite vigente ${m.cap} rpm`:''})${m.stopped?'; la máquina sigue parada hasta el mantenimiento':''}.`)}
+/*ENDCORE*/
+
+/*UI*/
+const $=id=>document.getElementById(id);
+let sim=createSim(true),running=true,timer=null,lastLogN=-1;
+const KIND={DESC:['Descriptivo','#888780'],ANOM:['Anomalía','#EF9F27'],PRED:['Predicción','#534AB7'],REC:['Recomendación','#378ADD'],ACT:['Actuación','#1D9E75'],RES:['Resultado','#0F6E56'],STOP:['Parada crítica','#E24B4A'],RECUP:['Recuperación','#D4537E']};
+const ST={OK:['Funcionamiento normal','#0F6E56','rgba(29,158,117,.15)'],WARN:['Anomalía detectada','#BA7517','rgba(239,159,39,.18)'],FAIL:['Umbral de fallo superado','#E24B4A','rgba(226,75,74,.15)'],STOP:['Parada — requiere mantenimiento','#E24B4A','rgba(226,75,74,.15)']};
+function col(t,title){return `<section><h3>${title}</h3>
+<div class="ban" id="ban${t}"></div>
+<div class="card"><div class="ct">⚙ Máquina física</div>
+<div class="m">RPM<b id="r${t}"></b></div><div class="m">Temperatura<b id="t${t}"></b></div><div class="m">Vibración<b id="v${t}"></b></div>
+<div class="badge" id="s${t}"></div>
+<div style="margin-top:8px"><button id="m${t}">🔧 Aplicar mantenimiento</button></div><div class="sm" id="mh${t}"></div></div>
+<div class="card"><div class="ct">${t==='A'?'🖥 Gemelo digital (sin IA)':'🧠 Gemelo digital (con IA)'}</div><div id="tw${t}"></div></div></section>`}
+$('cols').innerHTML=col('A','SIN IA')+col('B','CON IA');
+function line(arr,x0,w,y,c,dash){if(arr.length<2)return'';const n=arr.length;return `<polyline fill="none" stroke="${c}" stroke-width="2" ${dash?`stroke-dasharray="${dash}"`:''} stroke-linejoin="round" points="${arr.map((v,i)=>(x0+i/(HIST-1)*w).toFixed(1)+','+y(v).toFixed(1)).join(' ')}"/>`}
+function chart(id,W,H,lo,hi,a,b,thr,tl){const P=24,y=v=>H-14-(cl(v,lo,hi)-lo)/(hi-lo)*(H-14-8),w=W-P-6;
+ let o=`<line x1="${P}" y1="${H-14}" x2="${W-6}" y2="${H-14}" stroke="var(--bd)"/>`+`<text x="2" y="${y(hi)+8}" font-size="10" fill="var(--tt)">${hi}</text><text x="2" y="${H-16}" font-size="10" fill="var(--tt)">${lo}</text>`;
+ for(const [v,c,d] of thr)o+=`<line x1="${P}" x2="${W-6}" y1="${y(v)}" y2="${y(v)}" stroke="${c}" stroke-dasharray="${d}"/>`;
+ o+=line(a,P,w,y,'#D85A30')+line(b,P,w,y,'#1D9E75');$(id).innerHTML=o}
+function render(){const s=sim;
+ for(const t of ['A','B']){const m=s[t],st=ST[m.state],al=(v,th)=>v>=th?' class="al"':'';
+  $('r'+t).textContent=r0(m.rpm).toLocaleString('es-ES');$('t'+t).textContent=r0(m.temp)+' °C';$('t'+t).className=m.temp>=T_WARN?'al':'';
+  $('v'+t).textContent=m.vib.toFixed(1)+' mm/s';$('v'+t).className=m.vib>=V_WARN?'al':'';
+  const b=$('s'+t);b.textContent=st[0];b.style.color=st[1];b.style.background=st[2];
+  $('m'+t).disabled=!(m.stopped&&m.temp<=70);$('mh'+t).textContent=m.stopped?(m.temp<=70?'Enfriada: ya se puede aplicar mantenimiento.':`Enfriando (${r0(m.temp)} °C → necesita ≤ 70 °C)…`):'';
+  const ban=$('ban'+t);ban.style.display=m.stopped?'block':'none';ban.textContent=m.stop?`Parada persistente por sobretemperatura (a los ${(m.stop.t*DT).toFixed(0)} s: pico ${r0(m.stop.temp)} °C a ${r0(m.stop.rpm)} rpm). Temperatura actual: ${r0(m.temp)} °C. Seguirá parada hasta aplicar mantenimiento (≤ 70 °C).`:''}
+ $('twA').innerHTML=`<div style="font-weight:500">Nivel: Descriptivo</div><div class="sm">Solo refleja el estado actual y emite alertas por umbral (80 / 92 °C). Sin predicción, sin recomendación y sin acciones: la máquina sigue la carga demandada hasta la parada a ${T_STOP} °C.</div>`;
+ const B=s.B,on=s.aiOn,act=on&&B.cap!=null,risk=on&&B.mode==='RISK';
+ const lv=(c,i,n)=>`<div class="lv${c?' on':''}">${i} ${n}</div>`;
+ $('twB').innerHTML=on?lv(true,'①','ANALIZAR — estado y tendencia')+lv(risk,'②','PREDECIR — riesgo a ~5 s')+lv(risk,'③','RECOMENDAR — propone acción')+lv(act,'④','ACTUAR — limita RPM automáticamente')
+  +`<div class="sm">Proyección a 5 s: <b>${r0(B.proj)} °C</b> · Límite de RPM: <b>${B.cap==null?'sin límite':B.cap+' rpm'}</b>${B.stopped?' · parada':''}</div>`
+  :`<div style="font-weight:500">IA desactivada</div><div class="sm">Sin predicción, recomendación ni actuación; solo alertas por umbral. ${B.cap!=null?`Conserva el límite ya aplicado: <b>${B.cap} rpm</b> (sin gestión automática).`:'Sin límite de RPM.'} Activa la IA para ver los 4 niveles.</div>`;
+ $('ai').textContent=on?'⚡ IA activada':'IA desactivada';$('ai').setAttribute('aria-pressed',on);
+ $('ai').style.background=on?'rgba(29,158,117,.18)':'var(--bg2)';$('ai').style.color=on?'#1D9E75':'var(--ts)';
+ $('pz').textContent=running?'⏸ Pausar':'▶ Reanudar';
+ const h=s.h;chart('gT',620,170,30,110,h.tA,h.tB,[[80,'#EF9F27','4 4'],[92,'#E24B4A','4 4'],[95,'#A32D2D','1 3']]);
+ chart('gR',300,90,0,3600,h.rA,h.rB,[]);chart('gV',300,90,0,12,h.vA,h.vB,[[V_WARN,'#EF9F27','4 4'],[V_FAIL,'#E24B4A','4 4']]);
+ if((s.seq||0)!==lastLogN){lastLogN=s.seq||0;
+  const el=$('log'),near=el.scrollHeight-el.scrollTop-el.clientHeight<40;
+  el.innerHTML=s.log.map(e=>{const k=KIND[e.k];return `<div class="lr"><span class="tm">${(e.t*DT).toFixed(0)} s</span><span class="ch" style="background:${e.tag==='A'?'#D85A3033':'#1D9E7533'};color:${e.tag==='A'?'#D85A30':'#1D9E75'}">${e.tag==='A'?'SIN IA':'CON IA'}</span><span class="ch" style="background:${k[1]}26;color:${k[1]}">${k[0]}</span><span>${e.text}</span></div>`}).join('');
+  if(near)el.scrollTop=el.scrollHeight}}
+function stop(){if(timer){clearInterval(timer);timer=null}}
+function start(){stop();timer=setInterval(()=>{tick(sim);render()},DT*1000)}
+$('ai').onclick=()=>{setAi(sim,!sim.aiOn);render()};
+$('pz').onclick=()=>{running=!running;running?start():stop();render()};
+$('rs').onclick=()=>{const ai=sim.aiOn;stop();sim=createSim(ai);lastLogN=-1;render();if(running)start()};
+$('mA').onclick=()=>{maintain(sim,sim.A);render()};$('mB').onclick=()=>{maintain(sim,sim.B);render()};
+render();start();
+</script></body></html>
